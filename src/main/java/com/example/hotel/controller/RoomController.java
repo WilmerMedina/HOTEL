@@ -25,12 +25,12 @@ public class RoomController {
         this.roomService = roomService;
     }
 
-    @GetMapping
+    @GetMapping("/list")
     public List<RoomResponse> getAllRooms() {
         return roomService.getAllRooms();
     }
 
-    @PostMapping
+    @PostMapping("/create")
     public RoomResponse createRoom(
             @RequestBody RoomRequest request) {
 

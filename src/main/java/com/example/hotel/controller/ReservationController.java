@@ -22,14 +22,15 @@ public class ReservationController {
         this.reservationService = reservationService;
     }
 
-    @PostMapping
+
+    @PostMapping("/create")
     public ReservationResponse createReservation(
             @RequestBody ReservationRequest request) {
 
         return reservationService.createReservation(request);
     }
 
-    @GetMapping
+    @GetMapping("/list")
     public List<ReservationResponse> getReservations() {
 
         return reservationService.getReservations();
