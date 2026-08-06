@@ -11,7 +11,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.hotel.dto.response.UserResponse;
-import com.example.hotel.exception.ConflictException;
 import com.example.hotel.service.UserService;
 
 @RestController
@@ -34,6 +33,7 @@ public class UserController {
         return ResponseEntity.ok(users);
     }
 
+    @PreAuthorize("hasRole('CLIENT')")
     @GetMapping("/{id}")
     public ResponseEntity<UserResponse> getUserById(
             @PathVariable Long id) {
@@ -53,9 +53,4 @@ public class UserController {
         return ResponseEntity.noContent().build();
     }
 
-    @GetMapping("/test")
-    public String test() {
-
-        throw new ConflictException("Probando conflicto");
-    }
 }

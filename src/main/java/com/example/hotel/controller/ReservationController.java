@@ -1,14 +1,14 @@
 package com.example.hotel.controller;
 
-
 import java.util.List;
 
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import com.example.hotel.dto.request.ReservationRequest;
 import com.example.hotel.dto.response.ReservationResponse;
 import com.example.hotel.service.ReservationService;
-
 
 @RestController
 @RequestMapping("/reservations")
@@ -22,17 +22,18 @@ public class ReservationController {
         this.reservationService = reservationService;
     }
 
-
     @PostMapping("/create")
-    public ReservationResponse createReservation(
+    public ResponseEntity<ReservationResponse> createReservation(
             @RequestBody ReservationRequest request) {
 
-        return reservationService.createReservation(request);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(reservationService.createReservation(request));
     }
 
     @GetMapping("/list")
-    public List<ReservationResponse> getReservations() {
+    public ResponseEntity<List<ReservationResponse>> getReservations() {
 
-        return reservationService.getReservations();
+        return ResponseEntity.ok(
+                reservationService.getReservations());
     }
 }
