@@ -1,5 +1,8 @@
+
 package com.example.hotel.controller;
 
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import com.example.hotel.dto.request.LoginRequest;
@@ -20,17 +23,20 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public JwtResponse register(
+    public ResponseEntity<JwtResponse> register(
             @Valid @RequestBody RegisterRequest request) {
 
-        return authService.register(request);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(authService.register(request));
     }
 
     @PostMapping("/login")
-    public JwtResponse login(
+    public ResponseEntity<JwtResponse> login(
             @Valid @RequestBody LoginRequest request) {
 
-        return authService.login(request);
+        return ResponseEntity.ok(
+                authService.login(request)
+        );
     }
-
 }
+

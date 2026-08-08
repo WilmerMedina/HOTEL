@@ -1,3 +1,4 @@
+
 package com.example.hotel.controller;
 
 import java.util.List;
@@ -7,15 +8,17 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.example.hotel.dto.request.UserRequest;
 import com.example.hotel.dto.response.UserResponse;
 import com.example.hotel.service.UserService;
 
 @RestController
 @RequestMapping("/users")
-@PreAuthorize("isAuthenticated()")
 public class UserController {
 
     private final UserService userService;
@@ -25,22 +28,33 @@ public class UserController {
     }
 
     @GetMapping
-    @PreAuthorize("hasRole('CLIENT')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<UserResponse>> getUsers() {
 
-        List<UserResponse> users = userService.getUsers();
-
-        return ResponseEntity.ok(users);
+        return ResponseEntity.ok(
+                userService.getUsers()
+        );
     }
 
-    @PreAuthorize("hasRole('CLIENT')")
     @GetMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<UserResponse> getUserById(
             @PathVariable Long id) {
 
-        UserResponse user = userService.getUserById(id);
+        return ResponseEntity.ok(
+                userService.getUserById(id)
+        );
+    }
 
-        return ResponseEntity.ok(user);
+    @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<UserResponse> updateUser(
+            @PathVariable Long id,
+            @RequestBody UserRequest request) {
+
+        return ResponseEntity.ok(
+                userService.updateUser(id, request)
+        );
     }
 
     @DeleteMapping("/{id}")
@@ -52,5 +66,5 @@ public class UserController {
 
         return ResponseEntity.noContent().build();
     }
-
 }
+

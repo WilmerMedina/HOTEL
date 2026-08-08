@@ -1,3 +1,4 @@
+
 package com.example.hotel.service.impl;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -17,83 +18,90 @@ import com.example.hotel.service.AuthService;
 @Service
 public class AuthServiceImpl implements AuthService {
 
-        private final UserRepository userRepository;
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final JwtService jwtService;
 
-        private final PasswordEncoder passwordEncoder;
+    public AuthServiceImpl(
+            UserRepository userRepository,
+            PasswordEncoder passwordEncoder,
+            JwtService jwtService) {
 
-        private final JwtService jwtService;
+        this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.jwtService = jwtService;
+    }
 
-        public AuthServiceImpl(
-                        UserRepository userRepository,
-                        PasswordEncoder passwordEncoder,
-                        JwtService jwtService) {
+    @Override
+    public JwtResponse register(RegisterRequest request) {
 
-                this.userRepository = userRepository;
-                this.passwordEncoder = passwordEncoder;
-                this.jwtService = jwtService;
+        String email = request.getEmail()
+                .trim()
+                .toLowerCase();
+
+        boolean emailExists = userRepository
+                .findByEmail(email)
+                .isPresent();
+
+        if (emailExists) {
+            throw new ConflictException(
+                    "El correo ya está registrado");
         }
 
-        @Override
-        public JwtResponse register(RegisterRequest request) {
+        User user = new User();
 
-                boolean emailExists = userRepository.findByEmail(
-                                request.getEmail()).isPresent();
+        user.setName(request.getName());
+        user.setEmail(email);
 
-                if (emailExists) {
+        user.setPassword(
+                passwordEncoder.encode(
+                        request.getPassword()));
 
-                        throw new ConflictException(
-                                        "El correo ya está registrado");
-                }
+        user.setRole(Role.CLIENT);
 
-                User user = new User();
+        User savedUser = userRepository.save(user);
 
-                user.setName(request.getName());
+        String token = jwtService.generateToken(
+                savedUser.getEmail());
 
-                user.setEmail(request.getEmail());
+        JwtResponse response = new JwtResponse();
 
-                user.setPassword(
-                                passwordEncoder.encode(
-                                                request.getPassword()));
+        response.setToken(token);
 
-                user.setRole(Role.CLIENT);
+        return response;
+    }
 
-                User savedUser = userRepository.save(user);
+    @Override
+    public JwtResponse login(LoginRequest request) {
 
-                String token = jwtService.generateToken(
-                                savedUser.getEmail());
+        String email = request.getEmail()
+                .trim()
+                .toLowerCase();
 
-                JwtResponse response = new JwtResponse();
+        User user = userRepository
+                .findByEmail(email)
+                .orElseThrow(() ->
+                        new AuthenticationException(
+                                "Correo o contraseña incorrectos"));
 
-                response.setToken(token);
+        boolean passwordMatches =
+                passwordEncoder.matches(
+                        request.getPassword(),
+                        user.getPassword());
 
-                return response;
+        if (!passwordMatches) {
+            throw new AuthenticationException(
+                    "Correo o contraseña incorrectos");
         }
 
-        @Override
-        public JwtResponse login(LoginRequest request) {
+        String token = jwtService.generateToken(
+                user.getEmail());
 
-                User user = userRepository
-                                .findByEmail(request.getEmail())
-                                .orElseThrow(() -> new AuthenticationException(
-                                                "Correo o contraseña incorrectos"));
+        JwtResponse response = new JwtResponse();
 
-                boolean passwordMatches = passwordEncoder.matches(
-                                request.getPassword(),
-                                user.getPassword());
+        response.setToken(token);
 
-                if (!passwordMatches) {
-
-                        throw new AuthenticationException(
-                                        "Correo o contraseña incorrectos");
-                }
-
-                String token = jwtService.generateToken(
-                                user.getEmail());
-
-                JwtResponse response = new JwtResponse();
-
-                response.setToken(token);
-
-                return response;
-        }
+        return response;
+    }
 }
+

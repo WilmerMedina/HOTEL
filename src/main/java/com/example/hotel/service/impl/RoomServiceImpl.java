@@ -1,3 +1,4 @@
+
 package com.example.hotel.service.impl;
 
 import java.util.List;
@@ -8,6 +9,7 @@ import com.example.hotel.dto.request.RoomRequest;
 import com.example.hotel.dto.response.RoomResponse;
 import com.example.hotel.entity.Room;
 import com.example.hotel.exception.ResourceNotFoundException;
+import com.example.hotel.mapper.RoomMapper;
 import com.example.hotel.repository.RoomRepository;
 import com.example.hotel.service.RoomService;
 
@@ -15,59 +17,39 @@ import com.example.hotel.service.RoomService;
 public class RoomServiceImpl implements RoomService {
 
     private final RoomRepository roomRepository;
+    private final RoomMapper roomMapper;
 
-    public RoomServiceImpl(RoomRepository roomRepository) {
+    public RoomServiceImpl(
+            RoomRepository roomRepository,
+            RoomMapper roomMapper) {
+
         this.roomRepository = roomRepository;
+        this.roomMapper = roomMapper;
     }
 
     @Override
     public List<RoomResponse> getAllRooms() {
 
-        List<Room> rooms = roomRepository.findAll();
-
-        return rooms.stream().map(room -> {
-
-            RoomResponse response = new RoomResponse();
-
-            response.setId(room.getId());
-            response.setRoomNumber(room.getRoomNumber());
-            response.setPrice(room.getPrice());
-            response.setCapacity(room.getCapacity());
-            response.setType(room.getType());
-            response.setStatus(room.getStatus());
-
-            return response;
-
-        }).toList();
+        return roomRepository.findAll()
+                .stream()
+                .map(roomMapper::toResponse)
+                .toList();
     }
 
     @Override
     public RoomResponse createRoom(RoomRequest request) {
 
-        Room room = new Room();
-
-        room.setRoomNumber(request.getRoomNumber());
-        room.setPrice(request.getPrice());
-        room.setCapacity(request.getCapacity());
-        room.setType(request.getType());
-        room.setStatus(request.getStatus());
+        Room room = roomMapper.toEntity(request);
 
         Room savedRoom = roomRepository.save(room);
 
-        RoomResponse response = new RoomResponse();
-
-        response.setId(savedRoom.getId());
-        response.setRoomNumber(savedRoom.getRoomNumber());
-        response.setPrice(savedRoom.getPrice());
-        response.setCapacity(savedRoom.getCapacity());
-        response.setType(savedRoom.getType());
-        response.setStatus(savedRoom.getStatus());
-
-        return response;
+        return roomMapper.toResponse(savedRoom);
     }
 
     @Override
-    public RoomResponse updateRoom(Long id, RoomRequest request) {
+    public RoomResponse updateRoom(
+            Long id,
+            RoomRequest request) {
 
         Room room = roomRepository.findById(id)
                 .orElseThrow(() ->
@@ -75,24 +57,11 @@ public class RoomServiceImpl implements RoomService {
                                 "Habitación no encontrada"
                         ));
 
-        room.setRoomNumber(request.getRoomNumber());
-        room.setPrice(request.getPrice());
-        room.setCapacity(request.getCapacity());
-        room.setType(request.getType());
-        room.setStatus(request.getStatus());
+        roomMapper.updateEntity(room, request);
 
         Room updatedRoom = roomRepository.save(room);
 
-        RoomResponse response = new RoomResponse();
-
-        response.setId(updatedRoom.getId());
-        response.setRoomNumber(updatedRoom.getRoomNumber());
-        response.setPrice(updatedRoom.getPrice());
-        response.setCapacity(updatedRoom.getCapacity());
-        response.setType(updatedRoom.getType());
-        response.setStatus(updatedRoom.getStatus());
-
-        return response;
+        return roomMapper.toResponse(updatedRoom);
     }
 
     @Override
@@ -107,3 +76,4 @@ public class RoomServiceImpl implements RoomService {
         roomRepository.delete(room);
     }
 }
+

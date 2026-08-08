@@ -1,3 +1,4 @@
+
 package com.example.hotel.controller;
 
 import java.util.List;
@@ -20,21 +21,23 @@ public class RoomController {
         this.roomService = roomService;
     }
 
-    @GetMapping("/list")
-    @PreAuthorize("hasRole('CLIENT')")
+    @GetMapping
+    @PreAuthorize("hasAnyRole('CLIENT', 'ADMIN')")
     public ResponseEntity<List<RoomResponse>> getAllRooms() {
 
         return ResponseEntity.ok(
-                roomService.getAllRooms());
+                roomService.getAllRooms()
+        );
     }
 
-    @PostMapping("/create")
-    @PreAuthorize("hasRole('CLIENT')")
+    @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<RoomResponse> createRoom(
             @RequestBody RoomRequest request) {
 
         return ResponseEntity.ok(
-                roomService.createRoom(request));
+                roomService.createRoom(request)
+        );
     }
 
     @PutMapping("/{id}")
@@ -44,7 +47,8 @@ public class RoomController {
             @RequestBody RoomRequest request) {
 
         return ResponseEntity.ok(
-                roomService.updateRoom(id, request));
+                roomService.updateRoom(id, request)
+        );
     }
 
     @DeleteMapping("/{id}")
@@ -57,3 +61,4 @@ public class RoomController {
         return ResponseEntity.noContent().build();
     }
 }
+

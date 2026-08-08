@@ -55,7 +55,6 @@ public class UserServiceImpl implements UserService {
         userRepository.delete(user);
     }
 
-
     @Override
     public UserResponse updateUser(Long id, UserRequest request) {
 
@@ -64,10 +63,9 @@ public class UserServiceImpl implements UserService {
                         "Usuario no encontrado"));
 
         userMapper.updateEntity(user, request);
+        User updatedUser = userRepository.save(user);
 
-        userRepository.save(user);
-
-        return userMapper.toResponse(user);
+        return userMapper.toResponse(updatedUser);
     }
 
 }

@@ -1,3 +1,4 @@
+
 package com.example.hotel.service.impl;
 
 import java.util.List;
@@ -12,27 +13,30 @@ import com.example.hotel.entity.User;
 import com.example.hotel.enums.ReservationStatus;
 import com.example.hotel.exception.ReservationConflictException;
 import com.example.hotel.exception.ResourceNotFoundException;
+import com.example.hotel.mapper.ReservationMapper;
 import com.example.hotel.repository.ReservationRepository;
 import com.example.hotel.repository.RoomRepository;
 import com.example.hotel.repository.UserRepository;
 import com.example.hotel.service.ReservationService;
 
 @Service
-public class ReservationServiceImpl
-        implements ReservationService {
+public class ReservationServiceImpl implements ReservationService {
 
     private final ReservationRepository reservationRepository;
     private final UserRepository userRepository;
     private final RoomRepository roomRepository;
+    private final ReservationMapper reservationMapper;
 
     public ReservationServiceImpl(
             ReservationRepository reservationRepository,
             UserRepository userRepository,
-            RoomRepository roomRepository) {
+            RoomRepository roomRepository,
+            ReservationMapper reservationMapper) {
 
         this.reservationRepository = reservationRepository;
         this.userRepository = userRepository;
         this.roomRepository = roomRepository;
+        this.reservationMapper = reservationMapper;
     }
 
     @Override
@@ -51,74 +55,40 @@ public class ReservationServiceImpl
                         new ResourceNotFoundException(
                                 "Habitación no encontrada"));
 
-      
-        boolean hasConflict = reservationRepository.existsByRoomIdAndCheckInLessThanEqualAndCheckOutGreaterThanEqual(
-                room.getId(),
-                request.getCheckOut(),
-                request.getCheckIn());
+        boolean hasConflict =
+                reservationRepository
+                        .existsByRoomIdAndCheckInLessThanEqualAndCheckOutGreaterThanEqual(
+                                room.getId(),
+                                request.getCheckOut(),
+                                request.getCheckIn());
 
         if (hasConflict) {
             throw new ReservationConflictException(
                     "La habitación ya está reservada en esas fechas");
         }
 
-        Reservation reservation = new Reservation();
-
-        reservation.setCheckIn(request.getCheckIn());
-        reservation.setCheckOut(request.getCheckOut());
-        reservation.setTotalPrice(request.getTotalPrice());
-
-        reservation.setStatus(
-                ReservationStatus.PENDING);
+        Reservation reservation =
+                reservationMapper.toEntity(request);
 
         reservation.setUser(user);
         reservation.setRoom(room);
+        reservation.setStatus(
+                ReservationStatus.PENDING);
 
         Reservation savedReservation =
                 reservationRepository.save(reservation);
 
-        ReservationResponse response =
-                new ReservationResponse();
-
-        response.setId(savedReservation.getId());
-
-        response.setCheckIn(
-                savedReservation.getCheckIn());
-
-        response.setCheckOut(
-                savedReservation.getCheckOut());
-
-        response.setTotalPrice(
-                savedReservation.getTotalPrice());
-
-        response.setStatus(
-                savedReservation.getStatus());
-
-        return response;
+        return reservationMapper.toResponse(
+                savedReservation);
     }
 
     @Override
     public List<ReservationResponse> getReservations() {
 
-        List<Reservation> reservations =
-                reservationRepository.findAll();
-
-        return reservations.stream().map(reservation -> {
-
-            ReservationResponse response =
-                    new ReservationResponse();
-
-            response.setId(reservation.getId());
-            response.setCheckIn(reservation.getCheckIn());
-            response.setCheckOut(reservation.getCheckOut());
-            response.setTotalPrice(
-                    reservation.getTotalPrice());
-
-            response.setStatus(
-                    reservation.getStatus());
-
-            return response;
-
-        }).toList();
+        return reservationRepository.findAll()
+                .stream()
+                .map(reservationMapper::toResponse)
+                .toList();
     }
 }
+

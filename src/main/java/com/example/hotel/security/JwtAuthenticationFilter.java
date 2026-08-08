@@ -1,3 +1,4 @@
+
 package com.example.hotel.security;
 
 import java.io.IOException;
@@ -11,7 +12,6 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
-
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -20,7 +20,6 @@ public class JwtAuthenticationFilter
         extends OncePerRequestFilter {
 
     private final JwtService jwtService;
-
     private final CustomUserDetailsService userDetailsService;
 
     public JwtAuthenticationFilter(
@@ -50,31 +49,38 @@ public class JwtAuthenticationFilter
 
         String token = authHeader.substring(7);
 
-        String email =
-                jwtService.extractEmail(token);
+        try {
 
-        if (email != null &&
+            String email = jwtService.extractEmail(token);
+
+            if (email != null &&
+                    SecurityContextHolder.getContext()
+                            .getAuthentication() == null) {
+
+                UserDetails userDetails =
+                        userDetailsService
+                                .loadUserByUsername(email);
+
+                UsernamePasswordAuthenticationToken authToken =
+                        new UsernamePasswordAuthenticationToken(
+                                userDetails,
+                                null,
+                                userDetails.getAuthorities());
+
+                authToken.setDetails(
+                        new WebAuthenticationDetailsSource()
+                                .buildDetails(request));
+
                 SecurityContextHolder.getContext()
-                        .getAuthentication() == null) {
+                        .setAuthentication(authToken);
+            }
 
-            UserDetails userDetails =
-                    userDetailsService
-                            .loadUserByUsername(email);
+        } catch (Exception e) {
 
-            UsernamePasswordAuthenticationToken authToken =
-                    new UsernamePasswordAuthenticationToken(
-                            userDetails,
-                            null,
-                            userDetails.getAuthorities());
-
-            authToken.setDetails(
-                    new WebAuthenticationDetailsSource()
-                            .buildDetails(request));
-
-            SecurityContextHolder.getContext()
-                    .setAuthentication(authToken);
+            SecurityContextHolder.clearContext();
         }
 
         filterChain.doFilter(request, response);
     }
 }
+
