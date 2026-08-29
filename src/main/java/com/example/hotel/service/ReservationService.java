@@ -1,7 +1,6 @@
-
 package com.example.hotel.service;
-
-import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import com.example.hotel.dto.request.ReservationRequest;
 import com.example.hotel.dto.response.ReservationResponse;
@@ -9,8 +8,13 @@ import com.example.hotel.dto.response.ReservationResponse;
 public interface ReservationService {
 
     ReservationResponse createReservation(
-            ReservationRequest request
-    );
+            ReservationRequest request,
+            String userEmail);
 
-    List<ReservationResponse> getReservations();
+    Page<ReservationResponse> getReservationsForUser(
+            String userEmail,
+            Pageable pageable);
+
+    Page<ReservationResponse> getAllReservations(
+            Pageable pageable);
 }

@@ -1,8 +1,7 @@
 
 package com.example.hotel.controller;
-
-import java.util.List;
-
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -29,11 +28,11 @@ public class UserController {
 
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<List<UserResponse>> getUsers() {
+    public ResponseEntity<Page<UserResponse>> getUsers(
+            Pageable pageable) {
 
         return ResponseEntity.ok(
-                userService.getUsers()
-        );
+                userService.getUsers(pageable));
     }
 
     @GetMapping("/{id}")
@@ -42,8 +41,7 @@ public class UserController {
             @PathVariable Long id) {
 
         return ResponseEntity.ok(
-                userService.getUserById(id)
-        );
+                userService.getUserById(id));
     }
 
     @PutMapping("/{id}")
@@ -53,8 +51,7 @@ public class UserController {
             @RequestBody UserRequest request) {
 
         return ResponseEntity.ok(
-                userService.updateUser(id, request)
-        );
+                userService.updateUser(id, request));
     }
 
     @DeleteMapping("/{id}")
@@ -67,4 +64,3 @@ public class UserController {
         return ResponseEntity.noContent().build();
     }
 }
-

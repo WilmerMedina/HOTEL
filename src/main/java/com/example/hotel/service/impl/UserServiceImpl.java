@@ -1,7 +1,6 @@
 package com.example.hotel.service.impl;
-
-import java.util.List;
-
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import com.example.hotel.dto.request.UserRequest;
@@ -27,12 +26,10 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public List<UserResponse> getUsers() {
+    public Page<UserResponse> getUsers(Pageable pageable) {
 
-        return userRepository.findAll()
-                .stream()
-                .map(userMapper::toResponse)
-                .toList();
+        return userRepository.findAll(pageable)
+                .map(userMapper::toResponse);
     }
 
     @Override

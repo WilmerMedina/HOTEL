@@ -1,4 +1,3 @@
-
 package com.example.hotel.mapper;
 
 import org.springframework.stereotype.Component;
@@ -29,18 +28,15 @@ public class ReservationMapper {
 
         reservation.setCheckIn(request.getCheckIn());
         reservation.setCheckOut(request.getCheckOut());
-        reservation.setTotalPrice(request.getTotalPrice());
+
 
         return reservation;
     }
 
-    public void updateEntity(
-            Reservation reservation,
-            ReservationRequest request) {
+    public void updateEntity(Reservation reservation, ReservationRequest request) {
 
         reservation.setCheckIn(request.getCheckIn());
         reservation.setCheckOut(request.getCheckOut());
-        reservation.setTotalPrice(request.getTotalPrice());
+
     }
 }
-

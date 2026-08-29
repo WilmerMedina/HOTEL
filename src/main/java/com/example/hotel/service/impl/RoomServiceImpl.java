@@ -1,8 +1,7 @@
 
 package com.example.hotel.service.impl;
-
-import java.util.List;
-
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import com.example.hotel.dto.request.RoomRequest;
@@ -28,12 +27,10 @@ public class RoomServiceImpl implements RoomService {
     }
 
     @Override
-    public List<RoomResponse> getAllRooms() {
+    public Page<RoomResponse> getAllRooms(Pageable pageable) {
 
-        return roomRepository.findAll()
-                .stream()
-                .map(roomMapper::toResponse)
-                .toList();
+        return roomRepository.findAll(pageable)
+                .map(roomMapper::toResponse);
     }
 
     @Override
@@ -52,10 +49,8 @@ public class RoomServiceImpl implements RoomService {
             RoomRequest request) {
 
         Room room = roomRepository.findById(id)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "Habitación no encontrada"
-                        ));
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Habitación no encontrada"));
 
         roomMapper.updateEntity(room, request);
 
@@ -68,12 +63,9 @@ public class RoomServiceImpl implements RoomService {
     public void deleteRoom(Long id) {
 
         Room room = roomRepository.findById(id)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "Habitación no encontrada"
-                        ));
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Habitación no encontrada"));
 
         roomRepository.delete(room);
     }
 }
-

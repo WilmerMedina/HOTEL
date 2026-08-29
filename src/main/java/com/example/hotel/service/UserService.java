@@ -1,13 +1,13 @@
 package com.example.hotel.service;
-
-import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import com.example.hotel.dto.request.UserRequest;
 import com.example.hotel.dto.response.UserResponse;
 
 
 public interface UserService {
-    List<UserResponse> getUsers();
+    Page<UserResponse> getUsers(Pageable pageable);
 
     UserResponse getUserById(Long id);
 

@@ -1,8 +1,12 @@
-
 package com.example.hotel.service.impl;
 
-import java.util.List;
+import java.time.temporal.ChronoUnit;
 
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import com.example.hotel.dto.request.ReservationRequest;
@@ -22,73 +26,84 @@ import com.example.hotel.service.ReservationService;
 @Service
 public class ReservationServiceImpl implements ReservationService {
 
-    private final ReservationRepository reservationRepository;
-    private final UserRepository userRepository;
-    private final RoomRepository roomRepository;
-    private final ReservationMapper reservationMapper;
+        private static final Logger log = LoggerFactory.getLogger(ReservationServiceImpl.class);
 
-    public ReservationServiceImpl(
-            ReservationRepository reservationRepository,
-            UserRepository userRepository,
-            RoomRepository roomRepository,
-            ReservationMapper reservationMapper) {
+        private final ReservationRepository reservationRepository;
+        private final UserRepository userRepository;
+        private final RoomRepository roomRepository;
+        private final ReservationMapper reservationMapper;
 
-        this.reservationRepository = reservationRepository;
-        this.userRepository = userRepository;
-        this.roomRepository = roomRepository;
-        this.reservationMapper = reservationMapper;
-    }
+        public ReservationServiceImpl(
+                        ReservationRepository reservationRepository,
+                        UserRepository userRepository,
+                        RoomRepository roomRepository,
+                        ReservationMapper reservationMapper) {
 
-    @Override
-    public ReservationResponse createReservation(
-            ReservationRequest request) {
-
-        User user = userRepository.findById(
-                request.getUserId())
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "Usuario no encontrado"));
-
-        Room room = roomRepository.findById(
-                request.getRoomId())
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "Habitación no encontrada"));
-
-        boolean hasConflict =
-                reservationRepository
-                        .existsByRoomIdAndCheckInLessThanEqualAndCheckOutGreaterThanEqual(
-                                room.getId(),
-                                request.getCheckOut(),
-                                request.getCheckIn());
-
-        if (hasConflict) {
-            throw new ReservationConflictException(
-                    "La habitación ya está reservada en esas fechas");
+                this.reservationRepository = reservationRepository;
+                this.userRepository = userRepository;
+                this.roomRepository = roomRepository;
+                this.reservationMapper = reservationMapper;
         }
 
-        Reservation reservation =
-                reservationMapper.toEntity(request);
+        @Override
+        public ReservationResponse createReservation(ReservationRequest request, String userEmail) {
 
-        reservation.setUser(user);
-        reservation.setRoom(room);
-        reservation.setStatus(
-                ReservationStatus.PENDING);
+                User user = userRepository.findByEmail(userEmail)
+                                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
 
-        Reservation savedReservation =
-                reservationRepository.save(reservation);
+                Room room = roomRepository.findById(request.getRoomId())
+                                .orElseThrow(() -> new ResourceNotFoundException("Habitación no encontrada"));
 
-        return reservationMapper.toResponse(
-                savedReservation);
-    }
+                long nights = ChronoUnit.DAYS.between(request.getCheckIn(), request.getCheckOut());
 
-    @Override
-    public List<ReservationResponse> getReservations() {
+                if (nights <= 0) {
+                        throw new ReservationConflictException(
+                                        "La fecha de salida debe ser posterior a la fecha de entrada");
+                }
 
-        return reservationRepository.findAll()
-                .stream()
-                .map(reservationMapper::toResponse)
-                .toList();
-    }
+                boolean hasConflict = reservationRepository
+                                .existsByRoomIdAndCheckInLessThanEqualAndCheckOutGreaterThanEqual(
+                                                room.getId(),
+                                                request.getCheckOut(),
+                                                request.getCheckIn());
+
+                if (hasConflict) {
+                        throw new ReservationConflictException(
+                                        "La habitación ya está reservada en esas fechas");
+                }
+
+                Reservation reservation = reservationMapper.toEntity(request);
+                reservation.setUser(user);
+                reservation.setRoom(room);
+                reservation.setStatus(ReservationStatus.PENDING);
+
+                reservation.setTotalPrice(room.getPrice() * nights);
+
+                Reservation savedReservation = reservationRepository.save(reservation);
+
+                log.info("Reserva creada (id={}) para usuario '{}' en habitación {}",
+                                savedReservation.getId(), userEmail, room.getId());
+
+                return reservationMapper.toResponse(savedReservation);
+        }
+
+        @Override
+        public Page<ReservationResponse> getReservationsForUser(
+                        String userEmail,
+                        Pageable pageable) {
+
+                User user = userRepository.findByEmail(userEmail)
+                                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+
+                return reservationRepository
+                                .findByUserId(user.getId(), pageable)
+                                .map(reservationMapper::toResponse);
+        }
+
+        @Override
+        public Page<ReservationResponse> getAllReservations(Pageable pageable) {
+
+                return reservationRepository.findAll(pageable)
+                                .map(reservationMapper::toResponse);
+        }
 }
-

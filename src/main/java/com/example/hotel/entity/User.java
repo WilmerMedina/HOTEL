@@ -32,6 +32,14 @@ public class User {
     @Enumerated(EnumType.STRING)
     private Role role;
 
+
+    @Column(nullable = false)
+    private boolean active = true;
+
+   
+    @Column(nullable = false)
+    private boolean locked = false;
+
     @OneToMany(mappedBy = "user")
     private List<Reservation> reservations;
 
@@ -75,12 +83,26 @@ public class User {
         this.role = role;
     }
 
+    public boolean isActive() {
+        return active;
+    }
+
+    public void setActive(boolean active) {
+        this.active = active;
+    }
+
+    public boolean isLocked() {
+        return locked;
+    }
+
+    public void setLocked(boolean locked) {
+        this.locked = locked;
+    }
+
     public List<Reservation> getReservations() {
         return reservations;
     }
 
-
-    
     public void setReservations(List<Reservation> reservations) {
         this.reservations = reservations;
     }

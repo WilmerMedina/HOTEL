@@ -1,13 +1,13 @@
 package com.example.hotel.service;
-
-import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import com.example.hotel.dto.request.RoomRequest;
 import com.example.hotel.dto.response.RoomResponse;
 
 public interface RoomService {
 
-    List<RoomResponse> getAllRooms();
+    Page<RoomResponse> getAllRooms(Pageable pageable);
 
     RoomResponse createRoom(RoomRequest request);
 

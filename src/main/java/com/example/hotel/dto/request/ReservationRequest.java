@@ -2,25 +2,22 @@ package com.example.hotel.dto.request;
 
 import java.time.LocalDate;
 
+import jakarta.validation.constraints.FutureOrPresent;
+import jakarta.validation.constraints.NotNull;
+
 public class ReservationRequest {
 
-    private Long userId;
 
+
+    @NotNull(message = "El id de la habitación es obligatorio")
     private Long roomId;
 
+    @NotNull(message = "La fecha de entrada es obligatoria")
+    @FutureOrPresent(message = "La fecha de entrada no puede ser en el pasado")
     private LocalDate checkIn;
 
+    @NotNull(message = "La fecha de salida es obligatoria")
     private LocalDate checkOut;
-
-    private Double totalPrice;
-
-    public Long getUserId() {
-        return userId;
-    }
-
-    public void setUserId(Long userId) {
-        this.userId = userId;
-    }
 
     public Long getRoomId() {
         return roomId;
@@ -44,13 +41,5 @@ public class ReservationRequest {
 
     public void setCheckOut(LocalDate checkOut) {
         this.checkOut = checkOut;
-    }
-
-    public Double getTotalPrice() {
-        return totalPrice;
-    }
-
-    public void setTotalPrice(Double totalPrice) {
-        this.totalPrice = totalPrice;
     }
 }
