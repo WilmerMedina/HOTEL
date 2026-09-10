@@ -1,8 +1,10 @@
 
 package com.example.hotel.service.impl;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.example.hotel.dto.request.RoomRequest;
 import com.example.hotel.dto.response.RoomResponse;
@@ -27,6 +29,7 @@ public class RoomServiceImpl implements RoomService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Page<RoomResponse> getAllRooms(Pageable pageable) {
 
         return roomRepository.findAll(pageable)
@@ -34,6 +37,7 @@ public class RoomServiceImpl implements RoomService {
     }
 
     @Override
+    @Transactional
     public RoomResponse createRoom(RoomRequest request) {
 
         Room room = roomMapper.toEntity(request);
@@ -44,6 +48,7 @@ public class RoomServiceImpl implements RoomService {
     }
 
     @Override
+    @Transactional
     public RoomResponse updateRoom(
             Long id,
             RoomRequest request) {
@@ -60,6 +65,7 @@ public class RoomServiceImpl implements RoomService {
     }
 
     @Override
+    @Transactional
     public void deleteRoom(Long id) {
 
         Room room = roomRepository.findById(id)
@@ -67,5 +73,16 @@ public class RoomServiceImpl implements RoomService {
                         "Habitación no encontrada"));
 
         roomRepository.delete(room);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public RoomResponse getRoomById(Long id) {
+
+        Room room = roomRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Habitación no encontrada"));
+
+        return roomMapper.toResponse(room);
     }
 }

@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.example.hotel.dto.request.ReservationRequest;
 import com.example.hotel.dto.response.ReservationResponse;
@@ -46,6 +47,7 @@ public class ReservationServiceImpl implements ReservationService {
         }
 
         @Override
+        @Transactional
         public ReservationResponse createReservation(ReservationRequest request, String userEmail) {
 
                 User user = userRepository.findByEmail(userEmail)
@@ -88,6 +90,7 @@ public class ReservationServiceImpl implements ReservationService {
         }
 
         @Override
+        @Transactional(readOnly = true)
         public Page<ReservationResponse> getReservationsForUser(
                         String userEmail,
                         Pageable pageable) {
@@ -101,6 +104,7 @@ public class ReservationServiceImpl implements ReservationService {
         }
 
         @Override
+        @Transactional(readOnly = true)
         public Page<ReservationResponse> getAllReservations(Pageable pageable) {
 
                 return reservationRepository.findAll(pageable)

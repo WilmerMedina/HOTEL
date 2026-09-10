@@ -1,4 +1,5 @@
 package com.example.hotel.service;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -8,6 +9,8 @@ import com.example.hotel.dto.response.RoomResponse;
 public interface RoomService {
 
     Page<RoomResponse> getAllRooms(Pageable pageable);
+
+    RoomResponse getRoomById(Long id);
 
     RoomResponse createRoom(RoomRequest request);
 

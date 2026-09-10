@@ -1,4 +1,5 @@
 package com.example.hotel.controller;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
@@ -25,6 +26,15 @@ public class RoomController {
 
     public RoomController(RoomService roomService) {
         this.roomService = roomService;
+    }
+
+    @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('CLIENT', 'ADMIN')")
+    public ResponseEntity<RoomResponse> getRoomById(
+            @PathVariable Long id) {
+
+        return ResponseEntity.ok(
+                roomService.getRoomById(id));
     }
 
     @GetMapping
