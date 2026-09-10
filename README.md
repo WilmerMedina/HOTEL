@@ -274,7 +274,7 @@ docker compose down -v
 
 ## Testing
 
-El proyecto cuenta con pruebas unitarias para la capa de servicios, usando **JUnit 5** y **Mockito** (`MockitoExtension`), sin necesidad de levantar el contexto de Spring ni una base de datos real.
+El proyecto cuenta con pruebas unitarias para la capa de servicios, usando **JUnit 5** y **Mockito** (`MockitoExtension`).
 
 ```bash
 ./mvnw test
