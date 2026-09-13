@@ -2,6 +2,9 @@ package com.example.hotel.service.impl;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -16,124 +19,226 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
+import com.example.hotel.dto.request.ChangePasswordRequest;
 import com.example.hotel.dto.response.UserResponse;
 import com.example.hotel.entity.User;
+import com.example.hotel.exception.InvalidPasswordException;
+import com.example.hotel.exception.ResourceNotFoundException;
 import com.example.hotel.mapper.UserMapper;
 import com.example.hotel.repository.UserRepository;
 
 @ExtendWith(MockitoExtension.class)
 public class UserServiceImplTest {
 
-    @Mock
-    private UserRepository userRepository;
+        @Mock
+        private UserRepository userRepository;
 
-    @Mock
-    private UserMapper userMapper;
+        @Mock
+        private UserMapper userMapper;
 
-    @InjectMocks
-    private UserServiceImpl userService;
+        @InjectMocks
+        private UserServiceImpl userService;
 
-    @Test
-    void shouldReturnUserById() {
+        @Mock
+        private PasswordEncoder passwordEncoder;
 
-        Long userId = 1L;
+        @Test
+        void shouldReturnUserById() {
 
-        User user = new User();
-        user.setName("Wilmer");
-        user.setEmail("wilmer@gmail.com");
+                Long userId = 1L;
 
-        UserResponse response = new UserResponse();
-        response.setName("Wilmer");
-        response.setEmail("wilmer@gmail.com");
+                User user = new User();
+                user.setName("Wilmer");
+                user.setEmail("wilmer@gmail.com");
 
-        when(userRepository.findById(userId))
-                .thenReturn(Optional.of(user));
+                UserResponse response = new UserResponse();
+                response.setName("Wilmer");
+                response.setEmail("wilmer@gmail.com");
 
-        when(userMapper.toResponse(user))
-                .thenReturn(response);
+                when(userRepository.findById(userId))
+                                .thenReturn(Optional.of(user));
 
-        UserResponse result = userService.getUserById(userId);
+                when(userMapper.toResponse(user))
+                                .thenReturn(response);
 
-        assertEquals("Wilmer", result.getName());
-        assertEquals("wilmer@gmail.com", result.getEmail());
+                UserResponse result = userService.getUserById(userId);
 
-        verify(userRepository).findById(userId);
-        verify(userMapper).toResponse(user);
-    }
+                assertEquals("Wilmer", result.getName());
+                assertEquals("wilmer@gmail.com", result.getEmail());
 
-    @Test
-    void shouldThrowExceptionWhenUserDoesNotExist() {
-        Long userId = 1L;
-        when(userRepository.findById(userId)).thenReturn(Optional.empty());
-        assertThrows(RuntimeException.class, () -> {
-            userService.getUserById(userId);
-        });
-        verify(userRepository).findById(userId);
-    }
+                verify(userRepository).findById(userId);
+                verify(userMapper).toResponse(user);
+        }
 
-    @Test
-    void shouldReturnUsers() {
+        @Test
+        void shouldThrowExceptionWhenUserDoesNotExist() {
+                Long userId = 1L;
+                when(userRepository.findById(userId)).thenReturn(Optional.empty());
+                assertThrows(RuntimeException.class, () -> {
+                        userService.getUserById(userId);
+                });
+                verify(userRepository).findById(userId);
+        }
 
-        User user1 = new User();
-        user1.setName("Wilmer");
-        user1.setEmail("wilmer@gmail.com");
+        @Test
+        void shouldReturnUsers() {
 
-        User user2 = new User();
-        user2.setName("Juan");
-        user2.setEmail("juan@gmail.com");
+                User user1 = new User();
+                user1.setName("Wilmer");
+                user1.setEmail("wilmer@gmail.com");
 
-        UserResponse response1 = new UserResponse();
-        response1.setName("Wilmer");
-        response1.setEmail("wilmer@gmail.com");
+                User user2 = new User();
+                user2.setName("Juan");
+                user2.setEmail("juan@gmail.com");
 
-        UserResponse response2 = new UserResponse();
-        response2.setName("Juan");
-        response2.setEmail("juan@gmail.com");
+                UserResponse response1 = new UserResponse();
+                response1.setName("Wilmer");
+                response1.setEmail("wilmer@gmail.com");
 
-        Pageable pageable = Pageable.ofSize(10);
+                UserResponse response2 = new UserResponse();
+                response2.setName("Juan");
+                response2.setEmail("juan@gmail.com");
 
-        Page<User> userPage = new PageImpl<>(
-                List.of(user1, user2));
+                Pageable pageable = Pageable.ofSize(10);
 
-        when(userRepository.findAll(pageable))
-                .thenReturn(userPage);
+                Page<User> userPage = new PageImpl<>(
+                                List.of(user1, user2));
 
-        when(userMapper.toResponse(user1))
-                .thenReturn(response1);
+                when(userRepository.findAll(pageable))
+                                .thenReturn(userPage);
 
-        when(userMapper.toResponse(user2))
-                .thenReturn(response2);
+                when(userMapper.toResponse(user1))
+                                .thenReturn(response1);
 
-        Page<UserResponse> result = userService.getUsers(pageable);
+                when(userMapper.toResponse(user2))
+                                .thenReturn(response2);
 
-        assertEquals(2, result.getContent().size());
+                Page<UserResponse> result = userService.getUsers(pageable);
 
-        assertEquals("Wilmer", result.getContent().get(0).getName());
-        assertEquals("wilmer@gmail.com", result.getContent().get(0).getEmail());
+                assertEquals(2, result.getContent().size());
 
-        assertEquals("Juan", result.getContent().get(1).getName());
-        assertEquals("juan@gmail.com", result.getContent().get(1).getEmail());
+                assertEquals("Wilmer", result.getContent().get(0).getName());
+                assertEquals("wilmer@gmail.com", result.getContent().get(0).getEmail());
 
-        verify(userRepository).findAll(pageable);
-        verify(userMapper).toResponse(user1);
-        verify(userMapper).toResponse(user2);
-    }
+                assertEquals("Juan", result.getContent().get(1).getName());
+                assertEquals("juan@gmail.com", result.getContent().get(1).getEmail());
 
-    @Test
-    void shouldReturnEmptyPageWhenThereAreNoUsers() {
+                verify(userRepository).findAll(pageable);
+                verify(userMapper).toResponse(user1);
+                verify(userMapper).toResponse(user2);
+        }
 
-        Pageable pageable = Pageable.ofSize(10);
+        @Test
+        void shouldReturnEmptyPageWhenThereAreNoUsers() {
 
-        Page<User> emptyPage = new PageImpl<>(List.of());
+                Pageable pageable = Pageable.ofSize(10);
 
-        when(userRepository.findAll(pageable))
-                .thenReturn(emptyPage);
+                Page<User> emptyPage = new PageImpl<>(List.of());
 
-        Page<UserResponse> result = userService.getUsers(pageable);
+                when(userRepository.findAll(pageable))
+                                .thenReturn(emptyPage);
 
-        assertEquals(0, result.getContent().size());
+                Page<UserResponse> result = userService.getUsers(pageable);
 
-        verify(userRepository).findAll(pageable);
-    }
+                assertEquals(0, result.getContent().size());
+
+                verify(userRepository).findAll(pageable);
+        }
+
+        @Test
+        void shouldChangePassword() {
+
+                User user = new User();
+                user.setEmail("admin@hotel.com");
+                user.setPassword("old-hashed-password");
+
+                ChangePasswordRequest request = new ChangePasswordRequest();
+                request.setCurrentPassword("oldPassword");
+                request.setNewPassword("newPassword");
+
+                when(userRepository.findByEmail("admin@hotel.com"))
+                                .thenReturn(Optional.of(user));
+
+                when(passwordEncoder.matches(
+                                "oldPassword",
+                                "old-hashed-password"))
+                                .thenReturn(true);
+
+                when(passwordEncoder.encode("newPassword"))
+                                .thenReturn("new-hashed-password");
+
+                userService.changePassword(
+                                "admin@hotel.com",
+                                request);
+
+                assertEquals(
+                                "new-hashed-password",
+                                user.getPassword());
+
+                verify(passwordEncoder)
+                                .encode("newPassword");
+
+                verify(userRepository)
+                                .save(user);
+        }
+
+        @Test
+        void shouldThrowExceptionWhenCurrentPasswordIsIncorrect() {
+
+                User user = new User();
+                user.setEmail("admin@hotel.com");
+                user.setPassword("old-hashed-password");
+
+                ChangePasswordRequest request = new ChangePasswordRequest();
+                request.setCurrentPassword("wrongPassword");
+                request.setNewPassword("newPassword");
+
+                when(userRepository.findByEmail("admin@hotel.com"))
+                                .thenReturn(Optional.of(user));
+
+                when(passwordEncoder.matches(
+                                "wrongPassword",
+                                "old-hashed-password"))
+                                .thenReturn(false);
+
+                assertThrows(
+                                InvalidPasswordException.class,
+                                () -> userService.changePassword(
+                                                "admin@hotel.com",
+                                                request));
+
+                verify(passwordEncoder, never())
+                                .encode(anyString());
+
+                verify(userRepository, never())
+                                .save(any(User.class));
+        }
+
+        @Test
+        void shouldThrowExceptionWhenUserDoesNotExistWhenChangingPassword() {
+
+                ChangePasswordRequest request = new ChangePasswordRequest();
+                request.setCurrentPassword("oldPassword");
+                request.setNewPassword("newPassword");
+
+                when(userRepository.findByEmail("admin@hotel.com"))
+                                .thenReturn(Optional.empty());
+
+                assertThrows(
+                                ResourceNotFoundException.class,
+                                () -> userService.changePassword(
+                                                "admin@hotel.com",
+                                                request));
+
+                verify(passwordEncoder, never())
+                                .matches(anyString(), anyString());
+
+                verify(passwordEncoder, never())
+                                .encode(anyString());
+
+                verify(userRepository, never())
+                                .save(any(User.class));
+        }
 }

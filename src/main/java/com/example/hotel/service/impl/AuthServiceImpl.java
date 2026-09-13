@@ -53,7 +53,7 @@ public class AuthServiceImpl implements AuthService {
         user.setName(request.getName());
         user.setEmail(email);
         user.setPassword(passwordEncoder.encode(request.getPassword()));
-        user.setRole(Role.CLIENT); 
+        user.setRole(Role.CLIENT);
 
         User savedUser = userRepository.save(user);
 
@@ -77,12 +77,6 @@ public class AuthServiceImpl implements AuthService {
                     return new AuthenticationException("Correo o contraseña incorrectos");
                 });
 
-        // Se valida el estado de la cuenta ANTES de revisar la contraseña.
-        // Sin esto, una cuenta bloqueada/desactivada podía seguir
-        // autenticándose y obteniendo tokens nuevos, sin importar lo que
-        // hiciéramos en CustomUserDetailsService — ese componente solo
-        // protege peticiones posteriores con un token ya emitido, no el
-        // login en sí, porque este flujo no pasa por AuthenticationManager.
         if (!user.isActive()) {
             log.warn("Intento de login en cuenta desactivada: {}", email);
             throw new AuthenticationException("Correo o contraseña incorrectos");
@@ -93,8 +87,7 @@ public class AuthServiceImpl implements AuthService {
             throw new AuthenticationException("Correo o contraseña incorrectos");
         }
 
-        boolean passwordMatches =
-                passwordEncoder.matches(request.getPassword(), user.getPassword());
+        boolean passwordMatches = passwordEncoder.matches(request.getPassword(), user.getPassword());
 
         if (!passwordMatches) {
             log.warn("Intento de login fallido (contraseña incorrecta): {}", email);

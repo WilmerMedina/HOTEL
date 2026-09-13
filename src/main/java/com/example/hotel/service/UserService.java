@@ -1,10 +1,11 @@
 package com.example.hotel.service;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import com.example.hotel.dto.request.ChangePasswordRequest;
 import com.example.hotel.dto.request.UserRequest;
 import com.example.hotel.dto.response.UserResponse;
-
 
 public interface UserService {
     Page<UserResponse> getUsers(Pageable pageable);
@@ -14,5 +15,7 @@ public interface UserService {
     void deleteUser(Long id);
 
     UserResponse updateUser(Long id, UserRequest request);
+
+    void changePassword(String email, ChangePasswordRequest request);
 
 }

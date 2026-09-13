@@ -43,8 +43,6 @@ public class GlobalExceptionHandler {
                         AuthenticationException ex,
                         HttpServletRequest request) {
 
-                // Nivel WARN: intentos de autenticación fallidos son relevantes para
-                // detectar fuerza bruta o abuso. Se loguea la IP, nunca credenciales.
                 log.warn("Fallo de autenticación desde IP {} en {}: {}",
                                 request.getRemoteAddr(), request.getRequestURI(), ex.getMessage());
 
@@ -146,8 +144,6 @@ public class GlobalExceptionHandler {
                         AuthorizationDeniedException ex,
                         HttpServletRequest request) {
 
-                // Nivel WARN: intentos de acceso a recursos sin permiso son relevantes
-                // para detectar escalación de privilegios o exploración maliciosa.
                 log.warn("Acceso denegado para usuario en {} desde IP {}",
                                 request.getRequestURI(), request.getRemoteAddr());
 
@@ -168,10 +164,6 @@ public class GlobalExceptionHandler {
                         Exception ex,
                         HttpServletRequest request) {
 
-                // Nivel ERROR con stack trace completo: esto es lo único que te
-                // permite diagnosticar bugs reales en producción. El cliente nunca
-                // ve este detalle (mensaje genérico abajo), pero en tus logs sí
-                // debe quedar completo.
                 log.error("Error inesperado procesando {} {}",
                                 request.getMethod(), request.getRequestURI(), ex);
 
@@ -184,6 +176,26 @@ public class GlobalExceptionHandler {
 
                 return ResponseEntity
                                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                                .body(error);
+        }
+
+        @ExceptionHandler(InvalidPasswordException.class)
+        public ResponseEntity<ErrorResponse> handleInvalidPassword(
+                        InvalidPasswordException ex,
+                        HttpServletRequest request) {
+
+                log.warn("Intento de cambio de contraseña con contraseña actual incorrecta para IP {}",
+                                request.getRemoteAddr());
+
+                ErrorResponse error = new ErrorResponse(
+                                HttpStatus.BAD_REQUEST.value(),
+                                "INVALID_PASSWORD",
+                                ex.getMessage(),
+                                request.getRequestURI(),
+                                List.of());
+
+                return ResponseEntity
+                                .status(HttpStatus.BAD_REQUEST)
                                 .body(error);
         }
 }
