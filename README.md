@@ -13,10 +13,11 @@ Proyecto de portafolio orientado a demostrar buenas prácticas de arquitectura e
 - **Gestión de habitaciones**: alta, edición, baja y listado paginado.
 - **Gestión de reservas**: creación con validación de fechas y detección de solapamientos (no se puede reservar una habitación ya ocupada en esas fechas), cálculo automático del precio total según noches.
 - **Gestión de usuarios**: listado, consulta, edición y baja (solo `ADMIN`), expuesta mediante un `UserResponse` que nunca incluye la contraseña.
+- **Cambio de contraseña**: endpoint dedicado para que un usuario autenticado (`ADMIN` o `CLIENT`) actualice su propia contraseña, validando la contraseña actual antes de aplicar el cambio.
 - **Cuentas activables/bloqueables**: el login rechaza cuentas inactivas o bloqueadas antes de validar la contraseña.
 - **Usuario administrador por defecto**: un `DataInitializer` crea automáticamente una cuenta `ADMIN` al arrancar la aplicación, si todavía no existe.
 - **Validación de datos** con Bean Validation (`jakarta.validation`) y mensajes de error personalizados.
-- **Manejo de errores consistente**: respuestas JSON uniformes para `401 Unauthorized` y `403 Forbidden`, y excepciones de negocio propias (`ResourceNotFoundException`, `ConflictException`, `ReservationConflictException`, `AuthenticationException`).
+- **Manejo de errores consistente**: respuestas JSON uniformes para `401 Unauthorized` y `403 Forbidden`, y excepciones de negocio propias (`ResourceNotFoundException`, `ConflictException`, `ReservationConflictException`, `AuthenticationException`, `InvalidPasswordException`).
 - **CORS configurado** de forma explícita para restringir los orígenes permitidos.
 - **Contraseñas cifradas** con BCrypt (strength 12).
 - **Paginación** en los endpoints de listado (`Pageable`).
@@ -64,7 +65,7 @@ com.example.hotel
 
 | Rol | Permisos |
 |----------|---------------------------------------------------------------------------|
-| `CLIENT` | Crear reservas, ver sus propias reservas, ver habitaciones disponibles. |
+| `CLIENT` | Crear reservas, ver sus propias reservas, ver habitaciones disponibles, cambiar su propia contraseña. |
 | `ADMIN` | Todo lo anterior + gestionar habitaciones, ver/gestionar usuarios y ver todas las reservas. |
 
 Todo usuario nuevo se registra por defecto con el rol `CLIENT`.
@@ -117,11 +118,43 @@ Al arrancar la aplicación, `DataInitializer` (`com.example.hotel.config`) verif
 | GET | `/users/{id}` | ADMIN | Consulta un usuario |
 | PUT | `/users/{id}` | ADMIN | Actualiza un usuario |
 | DELETE | `/users/{id}` | ADMIN | Elimina un usuario |
+| PATCH | `/users/password` | CLIENT, ADMIN | Cambia la contraseña del usuario autenticado |
 
 Todos los endpoints protegidos requieren el header:
 ```
 Authorization: Bearer <token>
 ```
+
+---
+
+### Cambio de contraseña
+
+El endpoint `PATCH /users/password` permite a cualquier usuario autenticado (`CLIENT` o `ADMIN`) cambiar su propia contraseña. El usuario se identifica a partir del `Authentication` inyectado por Spring Security (extraído del token JWT), por lo que no es necesario ni posible indicar un `id` en la URL.
+
+Body esperado (`ChangePasswordRequest`):
+
+```json
+{
+  "currentPassword": "contraseñaActual",
+  "newPassword": "contraseñaNueva"
+}
+```
+
+Flujo de validación (`UserServiceImpl.changePassword`):
+
+1. Se busca al usuario por el email extraído del token. Si no existe, se lanza `ResourceNotFoundException`.
+2. Se valida que `currentPassword` coincida con la contraseña almacenada usando `passwordEncoder.matches(...)`. Si no coincide, se lanza `InvalidPasswordException`.
+3. Si la validación es correcta, `newPassword` se cifra con BCrypt y el usuario se persiste con `userRepository.save(...)`.
+
+Respuestas:
+
+| Resultado | Código HTTP |
+|---|---|
+| Contraseña cambiada correctamente | `204 No Content` |
+| Contraseña actual incorrecta | `400 Bad Request` (`INVALID_PASSWORD`) |
+| Usuario no encontrado | `404 Not Found` |
+
+El manejador de excepciones (`InvalidPasswordException`) registra un `warn` con la IP del solicitante cada vez que se recibe una contraseña actual incorrecta, lo que facilita detectar intentos repetidos de adivinar la contraseña.
 
 ---
 
@@ -284,18 +317,21 @@ El proyecto cuenta con pruebas unitarias para la capa de servicios, usando **JUn
 
 | Clase de test | Servicio probado | Cantidad de tests |
 |--------------------------------|----------------------|--------------------|
-| `UserServiceImplTest` | `UserServiceImpl` | 4 |
+| `UserServiceImplTest` | `UserServiceImpl` | 7 |
 | `RoomServiceImplTest` | `RoomServiceImpl` | 8 |
 | `ReservationServiceImplTest` | `ReservationServiceImpl` | 10 |
 
 ### UserServiceImplTest
 
-Verifica la lógica de consulta y listado de usuarios:
+Verifica la lógica de consulta, listado y cambio de contraseña de usuarios:
 
 - Obtiene un usuario por ID y lo mapea correctamente a `UserResponse`.
 - Lanza una excepción cuando se busca un usuario que no existe.
 - Lista usuarios de forma paginada, mapeando cada `User` a su `UserResponse` correspondiente.
 - Retorna una página vacía cuando no hay usuarios registrados.
+- Cambia la contraseña de un usuario cuando la contraseña actual es correcta, verificando que se cifre la nueva contraseña y se persista el usuario.
+- Lanza `InvalidPasswordException` cuando la contraseña actual no coincide, sin llamar a `encode` ni a `save`.
+- Lanza `ResourceNotFoundException` al intentar cambiar la contraseña de un usuario que no existe, sin llamar a `matches`, `encode` ni `save`.
 
 ### RoomServiceImplTest
 
@@ -327,7 +363,7 @@ Cubre la lógica de negocio más compleja del sistema, incluida la validación d
 
 ### Notas sobre las pruebas
 
-- Todas las dependencias (`repository`, `mapper`) se simulan con `@Mock`, y el servicio bajo prueba se inyecta con `@InjectMocks`, aislando completamente la lógica de negocio de la capa de persistencia.
+- Todas las dependencias (`repository`, `mapper`, `passwordEncoder`) se simulan con `@Mock`, y el servicio bajo prueba se inyecta con `@InjectMocks`, aislando completamente la lógica de negocio de la capa de persistencia.
 - Las pruebas no requieren conexión a MySQL ni levantan el `ApplicationContext` de Spring, por lo que se ejecutan de forma rápida y determinista.
 - `HotelApplicationTests` (prueba de `contextLoads`) sí requiere una base de datos disponible, ya sea local, en memoria (H2) o vía Testcontainers, según el perfil activo.
 
@@ -340,5 +376,6 @@ Cubre la lógica de negocio más compleja del sistema, incluida la validación d
 - Los orígenes permitidos por CORS están centralizados en `SecurityConfig` y deben ajustarse a los dominios reales del frontend en producción.
 - `UserResponse` solo expone `name`, `email`, `role`, `active` y `locked`; la contraseña nunca se serializa hacia el cliente.
 - `DataInitializer` es idempotente: comprueba la existencia del admin por email antes de crearlo, por lo que puede ejecutarse en cada arranque sin duplicar la cuenta.
+- El cambio de contraseña identifica al usuario a partir del `Authentication` inyectado por Spring Security (token JWT), no a partir de un `id` en la ruta, evitando que un usuario pueda cambiar la contraseña de otro.
 
 ---
